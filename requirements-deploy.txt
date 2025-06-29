@@ -1,0 +1,12 @@
+# Deployment requirements - no PyTorch needed for ArcFace
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+insightface>=0.7.3
+onnxruntime>=1.16.0
+opencv-python-headless>=4.8.0
+pillow>=10.0.0
+numpy>=1.22
+python-multipart>=0.0.7
+
+# Note: InsightFace uses ONNX runtime, so PyTorch is not required for inference
+# This significantly reduces the Docker image size
