@@ -1,14 +1,17 @@
 # syntax=docker/dockerfile:1
 
-# Multi-stage build to reduce final image size
-FROM python:3.10-slim as builder
+FROM python:3.10-alpine as builder
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# Install build dependencies for Alpine
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    linux-headers \
+    g++ \
+    make \
+    libffi-dev
 
-# Install Python packages in a virtual environment
+# Create virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
@@ -16,8 +19,8 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
-# Final stage - smaller runtime image
-FROM python:3.10-slim
+# Final stage
+FROM python:3.10-alpine
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -25,40 +28,31 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PORT=8000 \
     PATH="/opt/venv/bin:$PATH"
 
-# Install only runtime dependencies
-RUN apt-get update && apt-get install -y \
-    libglib2.0-0 \
-    libsm6 \
-    libxrender1 \
-    libxext6 \
-    libfontconfig1 \
-    libice6 \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+# Install runtime dependencies
+RUN apk add --no-cache \
+    libstdc++ \
+    libgomp \
+    curl
 
-# Copy virtual environment from builder stage
+# Copy virtual environment
 COPY --from=builder /opt/venv /opt/venv
 
-# Create non-root user
-RUN useradd --create-home --shell /bin/bash app
+# Create user
+RUN adduser -D -s /bin/sh app
 
 WORKDIR /app
 
-# Copy application code
+# Copy app
 COPY app/ ./app/
 COPY *.py ./
 
-# Set ownership
 RUN chown -R app:app /app
 
 USER app
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=30s --start-period=15s --retries=3 \
     CMD curl -f http://localhost:$PORT/health || exit 1
 
 EXPOSE $PORT
 
-# Start the server
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1"]

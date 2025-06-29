@@ -251,7 +251,7 @@ class WealthyProfileDB:
             
             industry_pattern = industry_patterns[industry_type]
             
-            embedding = np.zeros(2048) 
+            embedding = np.zeros(512)  # ArcFace embedding dimension 
             embedding[:20] = base_pattern
             embedding[20:30] = industry_pattern
             
@@ -262,10 +262,10 @@ class WealthyProfileDB:
             name_hash = hash(profile["name"]) % 10000
             np.random.seed(name_hash)
             
-            personal_noise = np.random.normal(0, 0.02, 2048 - 40)  # Reduced noise
+            personal_noise = np.random.normal(0, 0.02, 512 - 40)  # Reduced noise for remaining dimensions
             embedding[40:] = personal_noise
             
-            embedding += np.random.normal(0, 0.005, 2048)  # Very small noise
+            embedding += np.random.normal(0, 0.005, 512)  # Very small noise
             
             norm = np.linalg.norm(embedding)
             if norm > 0:
