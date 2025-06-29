@@ -7,4 +7,35 @@ __pycache__/
 venv
 .env
 .git
-.gitignore 
+.gitignore
+
+# Test and development files
+test_images/
+tests/
+*.md
+README.md
+API_TEST_RESULTS.md
+QUICK_DEPLOY.md
+TEST_RESULTS.md
+WEALTH_ESTIMATION_FIX.md
+
+# Development scripts
+test_api.py
+debug_api.py
+debug_wealth.py
+comparison_analysis.py
+dataset_stats.py
+
+# Other deployment configs
+deploy/
+docker-compose.yml
+Dockerfile.optimized
+Dockerfile.alpine
+requirements-cpu.txt
+requirements-minimal.txt
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/ 
