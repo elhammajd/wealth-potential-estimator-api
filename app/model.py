@@ -9,27 +9,27 @@ from insightface.app import FaceAnalysis
 
 
 class EmbeddingModel:
-    """ArcFace wrapper for high-quality face embeddings - optimized for wealth estimation."""
+    """ArcFace wrapper using ONNX runtime only - no PyTorch needed."""
 
     def __init__(self, device=None):
-        self.device = device or "cpu"  # ArcFace works well on CPU
+        # ArcFace with ONNX runtime works well on CPU
+        self.device = "cpu"
         self.app = self._load_model()
 
     def _load_model(self):
-        """Load InsightFace ArcFace model."""
-        print("Loading ArcFace model for face recognition (better for wealth estimation)...")
+        """Load InsightFace ArcFace model with ONNX runtime only."""
+        print("Loading ArcFace model for face recognition (ONNX runtime, no PyTorch)...")
         
         try:
-            # Initialize face analysis app with CPU provider
+            # Initialize face analysis app with CPU provider only
             app = FaceAnalysis(providers=['CPUExecutionProvider'])
             app.prepare(ctx_id=0, det_size=(640, 640))
             
-            print(" ArcFace model loaded successfully")
+            print("ArcFace model loaded successfully")
             return app
         except Exception as e:
-            print(f" Failed to load ArcFace: {e}")
-            print("   Falling back to simpler face detection...")
-            # Could implement a simpler fallback here if needed
+            print(f"Failed to load ArcFace: {e}")
+            print("   Make sure InsightFace and ONNX runtime are installed")
             raise e
 
     def _preprocess_image(self, pil_img):
@@ -54,8 +54,8 @@ class EmbeddingModel:
             faces = self.app.get(img_bgr)
             
             if not faces:
-                print("  No face detected in image - using fallback")
-                # Return a small random vector to avoid breaking the API
+                print("Warning: No face detected in image - using fallback")
+                # Return a consistent fallback vector
                 np.random.seed(42)
                 return np.random.normal(0, 0.1, 512).astype(np.float32)
             
@@ -68,11 +68,11 @@ class EmbeddingModel:
             if norm > 0:
                 embedding = embedding / norm
             
-            print(f" Face detected and processed, embedding shape: {embedding.shape}")
+            print(f"Face detected and processed, embedding shape: {embedding.shape}")
             return embedding.astype(np.float32)
             
         except Exception as e:
-            print(f" Error processing image: {e}")
+            print(f"Error processing image: {e}")
             # Return fallback vector
             np.random.seed(42)
             return np.random.normal(0, 0.1, 512).astype(np.float32)
@@ -83,6 +83,6 @@ class EmbeddingModel:
             pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
             return self.embed_pil(pil_img)
         except Exception as e:
-            print(f" Error loading image: {e}")
+            print(f"Error loading image: {e}")
             np.random.seed(42)
-            return np.random.normal(0, 0.1, 512).astype(np.float32) 
+            return np.random.normal(0, 0.1, 512).astype(np.float32)

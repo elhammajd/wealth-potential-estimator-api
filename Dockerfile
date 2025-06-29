@@ -1,32 +1,34 @@
 # syntax=docker/dockerfile:1
 
-# Multi-stage build to reduce final image size
+# Multi-stage build for ArcFace with ONNX runtime only (no PyTorch)
 FROM python:3.10-slim as builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
+    cmake \
+    libglib2.0-0 \
+    libsm6 \
+    libxrender1 \
+    libxext6 \
+    libfontconfig1 \
+    libice6 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python packages in a virtual environment
+# Create virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# First install PyTorch CPU separately
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir torch>=2.0.0,<3.0.0 --index-url https://download.pytorch.org/whl/cpu \
-    && pip install --no-cache-dir torchvision>=0.15.0,<1.0.0 --index-url https://download.pytorch.org/whl/cpu
-
-# Then install other requirements
+# Install Python packages (no PyTorch needed for ONNX-only ArcFace)
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
 # Final stage - smaller runtime image
 FROM python:3.10-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    WEALTHAPI_PRETRAINED=1 \
     PORT=8000 \
     PATH="/opt/venv/bin:$PATH"
 
