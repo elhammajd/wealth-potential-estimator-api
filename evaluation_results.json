@@ -1,0 +1,52 @@
+{
+  "regression_metrics": {
+    "mae_mean": 28533467114.750294,
+    "mae_std": 607857946.9342158,
+    "rmse_mean": 37997834829.362236,
+    "rmse_std": 1264254669.7434673,
+    "mape_mean": 16898650.323217325,
+    "mape_std": 631537.1767310443,
+    "r2_mean": 0.07946310179522817,
+    "r2_std": 0.019701064567569336,
+    "median_ae_mean": 18202048183.600513,
+    "median_ae_std": 314969511.1761772,
+    "wealth_class_acc_mean": 0.40224089635854343,
+    "wealth_class_acc_std": 0.012932260743404802
+  },
+  "retrieval_metrics": {
+    "1": {
+      "hit_at_k": 1.0,
+      "recall_at_k": 0.017977696226411,
+      "precision_at_k": 1.0,
+      "ndcg_at_k": 1.0
+    },
+    "3": {
+      "hit_at_k": 1.0,
+      "recall_at_k": 0.053933088679233,
+      "precision_at_k": 1.0,
+      "ndcg_at_k": 1.0
+    },
+    "5": {
+      "hit_at_k": 1.0,
+      "recall_at_k": 0.08988848113205511,
+      "precision_at_k": 1.0,
+      "ndcg_at_k": 1.0
+    },
+    "10": {
+      "hit_at_k": 1.0,
+      "recall_at_k": 0.1764594892020885,
+      "precision_at_k": 0.9900000000000002,
+      "ndcg_at_k": 0.9933348044652103
+    },
+    "map": 0.954576850336167
+  },
+  "dataset_stats": {
+    "num_profiles": 120,
+    "wealth_range": {
+      "min": 800,
+      "max": 342000000000,
+      "mean": 21606262969.166668,
+      "median": 470000.0
+    }
+  }
+}

@@ -30,6 +30,15 @@ app.add_middleware(
 embedding_model = EmbeddingModel()
 profile_db = WealthyProfileDB()
 
+# Try to load calibrator
+try:
+    from .calibrator import load_calibrator
+    wealth_calibrator = load_calibrator()
+    print("Wealth calibrator loaded")
+except Exception as e:
+    print(f"Could not load calibrator: {e}")
+    wealth_calibrator = None
+
 
 @app.post("/predict", response_model=PredictResponse)
 async def predict(file: UploadFile = File(...)):
@@ -65,8 +74,15 @@ async def predict(file: UploadFile = File(...)):
         confidence = "high"
         print(f"Good match scores (max: {max_similarity:.3f}) - pretty confident here")
     
-    # Calculate the wealth estimate using improved prediction logic
-    estimated = predict_wealth(embedding, top_matches_raw[:3])
+    # Calculate the wealth estimate using calibrated prediction if available
+    if wealth_calibrator and top_matches_raw:
+        # Use the highest similarity score for calibrated prediction
+        max_similarity = max([sim for _, sim in top_matches_raw])
+        estimated = wealth_calibrator.predict_wealth(max_similarity)
+        print(f"Using calibrated prediction based on max similarity: {max_similarity:.3f}")
+    else:
+        # Fallback to original method
+        estimated = predict_wealth(embedding, top_matches_raw[:3])
     
     # Return top 3 matches with full info
     top_matches = [

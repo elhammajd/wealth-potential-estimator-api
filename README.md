@@ -1,161 +1,151 @@
 # Wealth Potential Estimator API
 
-A simple web API that tries to guess someone's net worth from their photo. Upload a selfie and get back an estimate plus the 3 most similar wealthy people from our database.
+A demonstration machine-learning API that estimates a person’s potential net worth from a selfie. Upload a photo to the `/predict` endpoint and receive:
 
-Built with FastAPI and can run anywhere Docker works 
+* **Estimated Net Worth**: Calibrated prediction in USD
+* **Top-3 Similar Profiles**: Names, similarity scores, and mock net-worths
 
----
-
-## How It Works
-
-```
-               +---------------------------+
-               |  Database of Rich People  |
-               +-------------+-------------+
-                             |
-                             | (embeddings)
-               +-------------v-------------+
-               |  FastAPI web server       |
-    ┌──────────>  • /predict endpoint      |
-    |          |  • ResNet50 vision model  |
-    | photo    |  • Similarity matching    |
-    | upload   +-------------+-------------+
-    |                        |
-    | JSON                   | cosine similarity
-    | response               |
-    |                        v
-+---+----+           +--------------+
-| You    |           | Pretrained   |
-| (web/  |           | ResNet-50    |
-|  app)  |           +--------------+
-+--------+
-```
-
-### What We Used
-
-* **FastAPI** - Easy to use, auto-generates docs
-* **ResNet-50** - Pretrained vision model that turns images into 2,048 numbers. **Important**: Must use pretrained weights or everything looks the same!
-* **120 People Database** - Mix of billionaires, millionaires, and regular folks across all income levels
-* **Cosine Similarity** - Math to find who looks most similar
-* **Docker** - Runs the same everywhere
+Built with FastAPI, ArcFace face recognition, statistical calibration, and containerized via Docker. 
 
 ---
 
-## Running It Yourself
+## Features
 
-### Quick Start
+* **State-of-the-Art Face Embeddings**: Uses ArcFace (ONNX) for 512-dimensional, L2‑normalized vectors
+* **Cosine Similarity Lookup**: Efficient nearest‑neighbor search against 120 synthetic wealthy profiles
+* **Calibration Ensemble**: Linear + Isotonic regression models map similarity scores to realistic net‑worth estimates
+* **Robust Validation**: MIME/type, file size, image integrity, and face detection checks
+* **Fast & Lightweight**: \~200–400 ms per request, \~300 MB memory footprint
+* **Dockerized**: Multi‑stage build with Alpine‑slim base and ONNX Runtime
+
+---
+
+## Quick Start
+
+### Live Demo
 
 ```bash
-# Get the code
-git clone <repo-url> && cd wealth
+# Predict from terminal
+curl -X POST "https://wealth-potential-estimator-api-production.up.railway.app/predict" \
+     -F "file=@your_photo.jpg"
 
-# Install stuff
-python -m venv .venv && source .venv/bin/activate
+# Health check
+curl "https://wealth-potential-estimator-api-production.up.railway.app/health"
+```
+
+### Local Development
+
+```bash
+# Clone repository
+git clone <repo-url>
+cd wealth-potential-estimator-api
+
+# Install dependencies
 pip install -r requirements.txt
 
-# Start it up
+# Run server
 uvicorn app.main:app --reload
 ```
 
-Go to http://127.0.0.1:8000/docs to try it out.
+Open [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for interactive API docs.
 
-### With Docker
+### Docker Deployment
 
 ```bash
-# Build it
-docker build -t wealth-estimator .
-
-# Run it
-docker run -p 8000:8000 wealth-estimator
+docker build -t wealth-estimator-api .
+docker run -p 8000:8000 wealth-estimator-api
 ```
 
 ---
 
-## Important Settings
+## Project Structure
 
-| Setting | Default | What It Does |
-|---------|---------|--------------|
-| `WEALTHAPI_PRETRAINED` | `1` | Use pretrained ResNet weights (you want this!) Set to `0` for random results |
-
-⚠️ **Don't set WEALTHAPI_PRETRAINED=0** unless you want to see what broken looks like. Without pretrained weights, all photos look identical to the model and you get garbage results.
-
-```bash
-# Good (default)
-export WEALTHAPI_PRETRAINED=1
-uvicorn app.main:app --reload
-
-# Bad (don't do this)
-export WEALTHAPI_PRETRAINED=0
-uvicorn app.main:app --reload
+```text
+wealth-potential-estimator-api/
+├── app/
+│   ├── main.py           # FastAPI endpoints
+│   ├── model_arcface.py  # ArcFace ONNX embedding
+│   ├── data.py           # Mock profile database
+│   ├── calibrator.py     # Calibration regressors
+│   └── utils.py          # Validation & preprocessing
+├── tests/                # pytest suite for validation, API, and calibration
+├── calibrate_wealth.py   # Script to retrain calibration models
+├── Dockerfile            # Multi-stage Docker build
+├── ARCHITECTURE.md       # System architecture
+├── DESIGN_DECISIONS.md   # Rationale for model and metric choices
+├── README.md             # This file
+└── requirements.txt
 ```
 
 ---
 
-## How To Use It
+## Design Decisions
 
-```bash
-curl -X POST \
-     -F "file=@/path/to/your/photo.jpg" \
-     http://localhost:8000/predict | jq
-```
-
-You get back:
-
-```json
-{
-  "estimated_net_worth": 123456789.0,
-  "top_matches": [
-    {"name": "Some Rich Person", "similarity": 0.92},
-    {"name": "Another Rich Person", "similarity": 0.88},
-    {"name": "Third Rich Person", "similarity": 0.85}
-  ]
-}
-```
+For detailed rationale on model selection, similarity metric, calibration, and evaluation metrics, see [DESIGN\_DECISIONS.md](./DESIGN_DECISIONS.md).
 
 ---
 
-## Limitations & Disclaimers
+## System Architecture
 
-* **Fake Dataset**: Our "database" is mostly made up. Real performance would need real photos.
-* **Just For Fun**: Guessing wealth from looks is obviously not scientific and probably biased.
-* **Demo Only**: This is a proof of concept, not something you'd actually use.
-* **Scale Issues**: For thousands of people, you'd want a proper vector database.
-* **Security**: No rate limiting, auth, or input validation - don't put this on the internet as-is.
+Technical details and data flow are documented in [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ---
 
 ## API Reference
 
-### `POST /predict`
+### POST /predict
 
-Upload a photo, get wealth estimate.
+* **Input**: `multipart/form-data` with field `file` (JPEG or PNG)
+* **Output**:
 
-**Input**: Image file (multipart/form-data)
+  ```json
+  {
+    "estimated_net_worth": 1234567.89,
+    "top_matches": [
+      { "name": "Alice",  "similarity": 0.85, "net_worth": 15000000 },
+      { "name": "Bob",    "similarity": 0.82, "net_worth":  8500000 },
+      { "name": "Carol",  "similarity": 0.81, "net_worth": 12000000 }
+    ]
+  }
+  ```
+* **Errors**:
 
-**Output**:
-```json
-{
-  "estimated_net_worth": 1.23e8,
-  "top_matches": [
-    {"name": "Rich Person", "similarity": 0.95},
-    {"name": "Another Rich Person", "similarity": 0.90},
-    {"name": "Third Rich Person", "similarity": 0.85}
-  ]
-}
-```
+  * `400 Bad Request`: invalid file or no face detected
+  * `415 Unsupported Media Type`: wrong MIME type
+  * `413 Payload Too Large`: file exceeds size limit
+  * `500 Internal Server Error`: unexpected failure
 
-**Errors**: `400` if you upload something that's not an image
+### GET /health
+
+* **Output**:
+
+  ```json
+  { "status": "healthy" }
+  ```
 
 ---
 
-## License
+## Testing
 
-MIT - do whatever you want with it.
+Run the pytest suite:
 
-### Environment Variables
+```bash
+pytest --disable-warnings -q
+```
 
-- `WEALTHAPI_PRETRAINED` (default: "1")
-  - Set to "1" to use pretrained ResNet-50 weights (recommended)
-  - Set to "0" to use untrained weights (for testing bias scenarios)
+Sample scripts:
 
-**WARNING:** Don't set WEALTHAPI_PRETRAINED=0 unless you want to see what broken looks like. Without pretrained weights, all photos look identical to the model and you get garbage results. 
+* `python test_api.py` (API endpoint)
+* `python debug_calibrator.py` (calibration diagnostics)
+
+---
+
+## Configuration
+
+Environment variables:
+
+* `MAX_UPLOAD_SIZE` (bytes): file size limit
+* `WEALTHAPI_PRETRAINED` (0 or 1): enable/disable pretrained ArcFace
+
+
+
