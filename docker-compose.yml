@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  wealth-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - WEALTHAPI_PRETRAINED=1
+      - PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    volumes:
+      # Optional: Mount for development
+      # - ./app:/app/app:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wealth-api.rule=PathPrefix(`/`)"
+      - "traefik.http.services.wealth-api.loadbalancer.server.port=8000" 

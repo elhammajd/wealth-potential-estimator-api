@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: wealth-estimator-api
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    buildCommand: ""
+    startCommand: ""
+    envVars:
+      - key: WEALTHAPI_PRETRAINED
+        value: "1"
+      - key: PORT
+        value: "8000"
+    healthCheckPath: /health
+    autoDeploy: true
+    scaling:
+      minInstances: 1
+      maxInstances: 1 
